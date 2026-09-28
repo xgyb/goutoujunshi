@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#c2542a">
+<title>狗头军师</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23c2542a'/%3E%3Cpath d='M10 12l3 3-3 3M22 12l-3 3 3 3' stroke='%23fff' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f6f1ea; --card: #ffffff; --ink: #2b2118; --ink-soft: #6b5d4f;
+    --line: #e8ddd0; --accent: #c2542a; --accent-soft: #fbe9df;
+    --good: #4a7a5c; --danger: #b33a3a; --radius: 14px;
+    --shadow: 0 2px 12px rgba(80, 50, 20, 0.06);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.6; padding-bottom: 40px;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(246,241,234,0.92); backdrop-filter: saturate(180%) blur(10px);
+    border-bottom: 1px solid var(--line);
+    padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;
+  }
+  header h1 { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: 0.5px; display: flex; align-items: center; gap: 8px; }
+  header h1 .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+  header button {
+    background: none; border: 1px solid var(--line); border-radius: 999px;
+    padding: 6px 14px; font-size: 13px; color: var(--ink-soft); cursor: pointer;
+  }
+  main { max-width: 640px; margin: 0 auto; padding: 18px 16px; display: flex; flex-direction: column; gap: 16px; }
+  .card { background: var(--card); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); }
+  .card h2 { font-size: 13px; color: var(--ink-soft); margin: 0 0 10px; font-weight: 500; }
+  textarea, input, select {
+    width: 100%; border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 12px; font-size: 15px; font-family: inherit;
+    background: #fdfbf8; color: var(--ink); resize: vertical;
+  }
+  textarea:focus, input:focus, select:focus { outline: none; border-color: var(--accent); background: #fff; }
+  #input { min-height: 130px; }
+
+  .person-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .person-bar select { flex: 1; }
+  .person-bar button.mini {
+    flex: 0 0 auto; border: 1px dashed var(--accent); color: var(--accent);
+    background: var(--accent-soft); border-radius: 10px;
+    padding: 9px 12px; font-size: 13px; cursor: pointer; white-space: nowrap;
+  }
+
+  .row { display: flex; gap: 10px; margin-top: 12px; align-items: center; }
+  .row select { flex: 0 0 auto; width: auto; padding: 10px 12px; }
+  .row button.primary {
+    flex: 1; background: var(--accent); color: #fff; border: none;
+    padding: 12px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  .row button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .hint { font-size: 12px; color: var(--ink-soft); margin-top: 8px; }
+
+  #outputCard { display: none; }
+  #outputCard.visible { display: block; }
+  #output { font-size: 15px; white-space: pre-wrap; word-break: break-word; }
+  #output h3 { font-size: 14px; color: var(--accent); margin: 18px 0 6px; padding-left: 10px; border-left: 3px solid var(--accent); }
+  #output h3:first-child { margin-top: 0; }
+  #output .say-block { background: var(--accent-soft); border-radius: 10px; padding: 12px 14px; margin: 8px 0; font-size: 15px; }
+  #copyWrap { margin-top: 14px; display: none; }
+  #copyWrap.visible { display: block; }
+  #copyBtn { width: 100%; background: var(--good); color: #fff; border: none; padding: 12px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .status { text-align: center; font-size: 13px; color: var(--ink-soft); padding: 10px; display: none; }
+  .status.visible { display: block; }
+  .status.error { color: var(--danger); }
+
+  #mask { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 20; display: none; }
+  #mask.visible { display: block; }
+  #sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 21;
+    background: var(--card); border-radius: 20px 20px 0 0;
+    max-height: 90vh; overflow-y: auto; padding: 20px 18px 30px;
+    transform: translateY(100%); transition: transform 0.25s ease;
+  }
+  #sheet.visible { transform: translateY(0); }
+  #sheet h2 { margin: 0 0 4px; font-size: 18px; }
+  #sheet .sub { font-size: 12px; color: var(--ink-soft); margin-bottom: 16px; }
+  #sheet label { display: block; font-size: 13px; color: var(--ink-soft); margin: 14px 0 4px; }
+  #sheet textarea { min-height: 60px; font-size: 14px; }
+  #sheet .divider { border: none; border-top: 1px solid var(--line); margin: 18px 0 6px; }
+  #sheet .actions { display: flex; gap: 10px; margin-top: 20px; }
+  #sheet .actions button { flex: 1; padding: 12px; border-radius: 10px; font-size: 15px; cursor: pointer; }
+  #saveBtn { background: var(--accent); color: #fff; border: none; font-weight: 600; }
+  #closeBtn { background: none; border: 1px solid var(--line); color: var(--ink); }
+  .link { color: var(--accent); text-decoration: none; font-size: 12px; }
+
+  .person-item {
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+    margin-bottom: 8px; display: flex; align-items: center; gap: 10px; background: #fdfbf8;
+  }
+  .person-item .info { flex: 1; min-width: 0; }
+  .person-item .name { font-weight: 600; font-size: 14px; }
+  .person-item .meta { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+  .person-item .ops { display: flex; gap: 6px; }
+  .person-item .ops button {
+    border: 1px solid var(--line); background: #fff; border-radius: 6px;
+    padding: 4px 10px; font-size: 12px; cursor: pointer; color: var(--ink-soft);
+  }
+  .person-item .ops button.del { color: var(--danger); border-color: #f0d0d0; }
+  .person-empty {
+    font-size: 13px; color: var(--ink-soft); padding: 14px; text-align: center;
+    border: 1px dashed var(--line); border-radius: 10px; margin-bottom: 8px;
+  }
+  .person-form { border: 1px solid var(--accent); border-radius: 10px; padding: 12px; margin-bottom: 10px; background: #fff; }
+  .person-form .form-row { margin-bottom: 8px; }
+  .person-form .form-row label { margin: 0 0 2px; font-size: 12px; }
+  .person-form .form-ops { display: flex; gap: 8px; margin-top: 10px; }
+  .person-form .form-ops button { flex: 1; padding: 8px; border-radius: 8px; font-size: 13px; cursor: pointer; }
+  .person-form .form-ops .ok { background: var(--accent); color: #fff; border: none; }
+  .person-form .form-ops .cancel { background: none; border: 1px solid var(--line); }
+
+  .hist-note {
+    font-size: 11px; color: var(--ink-soft); margin-top: 6px; padding: 6px 8px;
+    background: #f3ede4; border-radius: 6px; display: none;
+  }
+  .hist-note.visible { display: block; }
+
+  .toast {
+    position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: #fff; padding: 8px 16px; border-radius: 999px;
+    font-size: 13px; opacity: 0; transition: opacity 0.2s; z-index: 30; pointer-events: none;
+  }
+  .toast.visible { opacity: 0.9; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="dot"></span>狗头军师</h1>
+  <button id="settingsBtn">设置</button>
+</header>
+
+<main>
+  <section class="card">
+    <h2>粘贴聊天内容 / 描述局面</h2>
+    <div class="person-bar">
+      <select id="personSelect"><option value="">未指定角色</option></select>
+      <button class="mini" id="addPersonBtn">＋ 新角色</button>
+    </div>
+    <textarea id="input" placeholder="例：&#10;对方刚发来：「最近有点忙，先不聊了」&#10;我们之前连续聊了一周，昨晚我约他周末吃饭他没正面回……"></textarea>
+    <div class="row">
+      <select id="mode">
+        <option value="reply">这句怎么回</option>
+        <option value="analyze">分析关系走向</option>
+        <option value="next">下一步怎么推进</option>
+        <option value="exit">要不要撤退</option>
+        <option value="free">随便聊聊</option>
+      </select>
+      <button class="primary" id="sendBtn">军师开算</button>
+    </div>
+    <div class="hist-note" id="histNote"></div>
+    <div class="hint">先在上方选一个角色（第一次用点"＋ 新角色"建档），军师会带着 TA 的档案和你们的历史对话来分析。</div>
+  </section>
+
+  <div class="status" id="status"></div>
+
+  <section class="card" id="outputCard">
+    <div id="output"></div>
+    <div id="copyWrap"><button id="copyBtn">复制推荐话术</button></div>
+  </section>
+</main>
+
+<div id="mask"></div>
+<div id="sheet">
+  <h2>设置</h2>
+  <div class="sub">Key 只存在本机浏览器 localStorage，不会上传到任何服务器。</div>
+
+  <label>豆包方舟 API Key（<a class="link" href="https://console.volcengine.com/ark/region:ark+cn-beijing/apiKey" target="_blank" rel="noopener">点这里申请</a>）</label>
+  <input type="password" id="apiKey" placeholder="sk-xxxxxxxx">
+
+  <label>模型 ID（默认 deepseek-v4-1-flash-260910）</label>
+  <input type="text" id="model" value="deepseek-v4-1-flash-260910">
+
+  <hr class="divider">
+  <h2 style="font-size:15px; margin-top:8px;">我自己</h2>
+  <div class="sub">全局档案，对所有角色生效。不知道的留空。</div>
+  <label>我（MBTI / 主观评分 0–100 / 优势短板）</label>
+  <textarea id="me" placeholder="例：ENFP，65，会聊天但容易多想，行动力一般"></textarea>
+
+  <hr class="divider">
+  <h2 style="font-size:15px; margin-top:8px;">角色管理</h2>
+  <div class="sub">每个角色独立档案，军师会记住你们之前聊过的内容。</div>
+  <div id="personList"></div>
+  <button id="addPersonInline" style="width:100%; padding:10px; border:1px dashed var(--accent); background:var(--accent-soft); color:var(--accent); border-radius:10px; cursor:pointer; margin-bottom:8px;">＋ 新建角色</button>
+
+  <div class="actions">
+    <button id="closeBtn">取消</button>
+    <button id="saveBtn">保存</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LS = {
+  apiKey: 'gtjs_apikey', model: 'gtjs_model', me: 'gtjs_me',
+  persons: 'gtjs_persons_v2', chats: 'gtjs_chats_v2', current: 'gtjs_current_person',
+};
+const $ = (id) => document.getElementById(id);
+
+function loadPersons() { try { return JSON.parse(localStorage.getItem(LS.persons)) || []; } catch { return []; } }
+function savePersons(p) { localStorage.setItem(LS.persons, JSON.stringify(p)); }
+function loadChats() { try { return JSON.parse(localStorage.getItem(LS.chats)) || {}; } catch { return {}; } }
+function saveChats(c) { localStorage.setItem(LS.chats, JSON.stringify(c)); }
+
+function loadSettings() {
+  $('apiKey').value = localStorage.getItem(LS.apiKey) || '';
+  $('model').value = localStorage.getItem(LS.model) || 'deepseek-v4-1-flash-260910';
+  $('me').value = localStorage.getItem(LS.me) || '';
+}
+function saveSettings() {
+  localStorage.setItem(LS.apiKey, $('apiKey').value.trim());
+  localStorage.setItem(LS.model, $('model').value.trim() || 'deepseek-v4-1-flash-260910');
+  localStorage.setItem(LS.me, $('me').value.trim());
+  closeSheet(); toast('已保存');
+}
+
+function openSheet() { $('mask').classList.add('visible'); $('sheet').classList.add('visible'); renderPersonList(); }
+function closeSheet() { $('mask').classList.remove('visible'); $('sheet').classList.remove('visible'); }
+$('settingsBtn').onclick = openSheet;
+$('closeBtn').onclick = closeSheet;
+$('mask').onclick = closeSheet;
+$('saveBtn').onclick = saveSettings;
+
+let toastTimer = null;
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('visible');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('visible'), 1600);
+}
+
+/* ===== 角色管理 ===== */
+function renderPersonList() {
+  const persons = loadPersons();
+  const list = $('personList');
+  const oldForm = list.querySelector('.person-form');
+  list.innerHTML = '';
+  if (oldForm) list.appendChild(oldForm);
+
+  if (persons.length === 0 && !oldForm) {
+    list.insertAdjacentHTML('beforeend', '<div class="person-empty">还没有角色，点下面"新建角色"建第一个</div>');
+    return;
+  }
+  persons.forEach(p => {
+    const item = document.createElement('div');
+    item.className = 'person-item';
+    item.innerHTML = `
+      <div class="info">
+        <div class="name"></div>
+        <div class="meta"></div>
+      </div>
+      <div class="ops">
+        <button class="edit">编辑</button>
+        <button class="del">删除</button>
+      </div>`;
+    item.querySelector('.name').textContent = p.name || '未命名';
+    const meta = [];
+    if (p.mbti) meta.push(p.mbti);
+    if (p.score) meta.push('评分 ' + p.score);
+    if (p.relation) meta.push(p.relation);
+    item.querySelector('.meta').textContent = meta.join(' · ') || '—';
+    item.querySelector('.edit').onclick = () => showPersonForm(p.id);
+    item.querySelector('.del').onclick = () => {
+      if (!confirm(`删除角色「${p.name}」？TA 的所有历史对话也会一起删掉。`)) return;
+      savePersons(loadPersons().filter(x => x.id !== p.id));
+      const cs = loadChats(); delete cs[p.id]; saveChats(cs);
+      renderPersonList(); refreshPersonSelect();
+    };
+    list.appendChild(item);
+  });
+}
+
+function showPersonForm(personId) {
+  const persons = loadPersons();
+  const p = personId ? persons.find(x => x.id === personId) : null;
+  const old = document.querySelector('.person-form'); if (old) old.remove();
+
+  const form = document.createElement('div');
+  form.className = 'person-form';
+  form.innerHTML = `
+    <div class="form-row"><label>代号/名字</label><input class="f-name" placeholder="例：小苏"></div>
+    <div class="form-row"><label>MBTI</label><input class="f-mbti" placeholder="例：INFJ"></div>
+    <div class="form-row"><label>主观评分 0–100</label><input class="f-score" type="number" min="0" max="100" placeholder="例：70"></div>
+    <div class="form-row"><label>当前关系</label><input class="f-relation" placeholder="例：暧昧三周 / 同事 / 前任"></div>
+    <div class="form-row"><label>备注（认识经过、关键事件等）</label><textarea class="f-notes" rows="2" placeholder="例：交友软件认识，见过两次面，最近回消息变慢"></textarea></div>
+    <div class="form-ops">
+      <button class="cancel">取消</button>
+      <button class="ok">保存</button>
+    </div>`;
+  if (p) {
+    form.querySelector('.f-name').value = p.name || '';
+    form.querySelector('.f-mbti').value = p.mbti || '';
+    form.querySelector('.f-score').value = p.score || '';
+    form.querySelector('.f-relation').value = p.relation || '';
+    form.querySelector('.f-notes').value = p.notes || '';
+  }
+  form.querySelector('.cancel').onclick = () => { form.remove(); renderPersonList(); };
+  form.querySelector('.ok').onclick = () => {
+    const name = form.querySelector('.f-name').value.trim();
+    if (!name) { toast('名字不能为空'); return; }
+    const data = {
+      id: p ? p.id : ('p_' + Date.now()),
+      name,
+      mbti: form.querySelector('.f-mbti').value.trim(),
+      score: form.querySelector('.f-score').value.trim(),
+      relation: form.querySelector('.f-relation').value.trim(),
+      notes: form.querySelector('.f-notes').value.trim(),
+    };
+    const ps = loadPersons();
+    if (p) { const idx = ps.findIndex(x => x.id === p.id); ps[idx] = data; }
+    else { ps.push(data); }
+    savePersons(ps);
+    renderPersonList(); refreshPersonSelect();
+  };
+  $('personList').prepend(form);
+  form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+$('addPersonInline').onclick = () => showPersonForm(null);
+$('addPersonBtn').onclick = () => { openSheet(); showPersonForm(null); };
+
+function refreshPersonSelect() {
+  const persons = loadPersons();
+  const sel = $('personSelect');
+  const cur = localStorage.getItem(LS.current) || '';
+  sel.innerHTML = '<option value="">未指定角色</option>';
+  persons.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = p.name + (p.relation ? '（' + p.relation + '）' : '');
+    sel.appendChild(opt);
+  });
+  sel.value = persons.find(p => p.id === cur) ? cur : '';
+  updateHistNote();
+}
+$('personSelect').onchange = () => {
+  localStorage.setItem(LS.current, $('personSelect').value);
+  updateHistNote();
+};
+
+function updateHistNote() {
+  const pid = $('personSelect').value;
+  const note = $('histNote');
+  if (!pid) { note.classList.remove('visible'); return; }
+  const chats = loadChats()[pid] || [];
+  if (chats.length === 0) note.textContent = '该角色还没有历史对话，这次聊完军师会记住。';
+  else note.textContent = `已记住和 TA 的 ${chats.length} 条对话记录，军师会作为参考。`;
+  note.classList.add('visible');
+}
+
+/* ===== system prompt ===== */
+function buildSystemPrompt() {
+  const me = localStorage.getItem(LS.me);
+  const pid = $('personSelect').value;
+  const persons = loadPersons();
+  const person = persons.find(p => p.id === pid);
+
+  let profile = '';
+  if (me || person) {
+    profile = '\n\n## 本次对话的角色档案\n';
+    if (me) profile += `- 用户本人：${me}\n`;
+    if (person) {
+      profile += `- 当前对话对象：${person.name}\n`;
+      if (person.mbti) profile += `  - MBTI：${person.mbti}\n`;
+      if (person.score) profile += `  - 用户主观评分：${person.score}\n`;
+      if (person.relation) profile += `  - 当前关系：${person.relation}\n`;
+      if (person.notes) profile += `  - 备注：${person.notes}\n`;
+    }
+  }
+  if (person) {
+    const all = loadChats()[person.id] || [];
+    const recent = all.slice(-16);
+    if (recent.length > 0) {
+      profile += `\n## 之前和这个角色的对话记录（作为背景理解，不要逐句引用）\n`;
+      recent.forEach(c => {
+        const who = c.role === 'user' ? '用户问' : '军师建议';
+        const text = c.content.length > 300 ? c.content.slice(0, 300) + '…' : c.content;
+        profile += `- ${who}：${text}\n`;
+      });
+    }
+  }
+
+  return `你是"狗头军师"，一个先接住情绪、再分析关系、最后给出可执行策略的恋爱军师。你在一个手机端单页网页里被调用，用户会粘贴微信/聊天软件里的内容给你。
+
+## 核心原则
+- 先接住情绪（2-4 句），再分清事实/推测/未知，最后给能执行的选择。
+- 不读心、不贴标签下结论；用真实行为校正 MBTI 等假设。
+- 把"对用户最有利"理解为情绪稳定、安全、自尊、边界、互惠、时间精力、机会成本、短期效果、长期信任与未来选择权；不要把"得到某个人"当作唯一胜利。
+- 普通心动/暧昧场景，只要没有明确拒绝或危险，帮用户至少主动一次；用户目标是退出时不强行推进。
+- 明确拒绝、不适、躲避、撤回时立即停止推进，不要"破解"。
+
+## 输出格式（严格遵守）
+用以下五个小节，标题固定：
+【情绪落地】2-4 句，认可感受，指出触发点。
+【局面判断】分三行：已知事实 / 合理推测 / 仍未知。只把用户贴的原文当事实。
+【我的建议】先给一句首选方向，再写 2-4 条理由。
+【可发送话术】用一个代码块包住用户可以直接复制发送的那条消息。语气要像用户本人，不要书面腔、不要 emoji。
+【后续观察】写清楚发出去后看什么信号、什么情况算好、什么情况该收手。
+
+${profile}
+
+如果"之前对话记录"和现在用户说的有冲突，以现在用户说的为准，并指出矛盾。`;
+}
+
+/* ===== 轻量 Markdown 渲染 ===== */
+function escapeHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function renderOutput(text) {
+  const blocks = [];
+  let t = text.replace(/```[\w]*\n?([\s\S]*?)```/g, (_, code) => { blocks.push(code.trim()); return `\u0000BLOCK${blocks.length - 1}\u0000`; });
+  const lines = t.split('\n');
+  let html = '';
+  let inPara = [];
+  const flushPara = () => { if (inPara.length) { html += '<p>' + inPara.map(escapeHtml).join('<br>') + '</p>'; inPara = []; } };
+  for (const line of lines) {
+    const m = line.match(/^【(.+?)】\s*$/);
+    if (m) { flushPara(); html += `<h3>${escapeHtml(m[1])}</h3>`; }
+    else if (/^\u0000BLOCK\d+\u0000$/.test(line.trim())) {
+      flushPara();
+      const idx = parseInt(line.trim().match(/\d+/)[0], 10);
+      html += `<div class="say-block">${escapeHtml(blocks[idx])}</div>`;
+    }
+    else if (line.trim() === '') flushPara();
+    else inPara.push(line.trim());
+  }
+  flushPara();
+  return html;
+}
+
+/* ===== 主流程 ===== */
+let generating = false;
+async function send() {
+  if (generating) return;
+  const apiKey = localStorage.getItem(LS.apiKey);
+  if (!apiKey) { toast('先去设置填 API Key'); openSheet(); return; }
+  const userText = $('input').value.trim();
+  if (!userText) { toast('先粘贴点内容'); return; }
+
+  const mode = $('mode').value;
+  const modeHint = {
+    reply: '当前用户意图：这句怎么回。请在【可发送话术】里给一条最能直接发的。',
+    analyze: '当前用户意图：分析关系走向。请在【局面判断】里把双方投入、互惠、机会成本讲透。',
+    next: '当前用户意图：下一步怎么推进。请在【我的建议】里给具体动作。',
+    exit: '当前用户意图：要不要撤退。请明确说继续还是撤，并给停止信号。',
+    free: '当前用户意图：自由聊聊。按你判断给最有用的角度。',
+  }[mode];
+  const pid = $('personSelect').value;
+
+  generating = true;
+  $('sendBtn').disabled = true;
+  $('sendBtn').textContent = '军师思考中…';
+  $('outputCard').classList.remove('visible');
+  $('copyWrap').classList.remove('visible');
+  $('output').innerHTML = '';
+  const status = $('status');
+  status.classList.add('visible'); status.classList.remove('error');
+  status.textContent = '正在连接豆包…';
+
+  let full = '';
+  try {
+    const resp = await fetch('https://ark.cn-beijing.volces.com/api/v3/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+      body: JSON.stringify({
+        model: localStorage.getItem(LS.model) || 'deepseek-v4-1-flash-260910',
+        messages: [
+          { role: 'system', content: buildSystemPrompt() },
+          { role: 'user', content: modeHint + '\n\n---\n用户输入：\n' + userText },
+        ],
+        stream: true, temperature: 0.7,
+      }),
+    });
+    if (!resp.ok) {
+      const errText = await resp.text();
+      throw new Error('HTTP ' + resp.status + '：' + errText.slice(0, 200));
+    }
+    status.textContent = '军师落笔中…';
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        const s = line.trim();
+        if (!s || !s.startsWith('data:')) continue;
+        const data = s.slice(5).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const j = JSON.parse(data);
+          const delta = j.choices?.[0]?.delta?.content || '';
+          if (delta) {
+            full += delta;
+            $('output').innerHTML = renderOutput(full);
+            $('outputCard').classList.add('visible');
+          }
+        } catch (e) {}
+      }
+    }
+    status.classList.remove('visible');
+    $('copyWrap').classList.add('visible');
+
+    if (pid && full) {
+      const chats = loadChats();
+      if (!chats[pid]) chats[pid] = [];
+      chats[pid].push({ role: 'user', content: userText, ts: Date.now() });
+      chats[pid].push({ role: 'assistant', content: full, ts: Date.now() });
+      if (chats[pid].length > 100) chats[pid] = chats[pid].slice(-100);
+      saveChats(chats);
+      updateHistNote();
+    }
+    $('outputCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (err) {
+    status.classList.add('error');
+    status.textContent = '出错了：' + err.message;
+  } finally {
+    generating = false;
+    $('sendBtn').disabled = false;
+    $('sendBtn').textContent = '军师开算';
+  }
+}
+$('sendBtn').onclick = send;
+$('input').addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') send();
+});
+
+$('copyBtn').onclick = async () => {
+  const blocks = document.querySelectorAll('#output .say-block');
+  if (!blocks.length) { toast('没有可复制的话术'); return; }
+  const last = blocks[blocks.length - 1].innerText;
+  try { await navigator.clipboard.writeText(last); toast('已复制'); }
+  catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = last; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    toast('已复制');
+  }
+};
+
+/* ===== 启动 ===== */
+const oldModels = ['doubao-pro-32k', 'doubao-seed-evolving', 'DeepSeek-V4.1-Flash', 'deepseek-v4-1-flash'];
+if (oldModels.includes(localStorage.getItem(LS.model))) {
+  localStorage.setItem(LS.model, 'deepseek-v4-1-flash-260910');
+}
+loadSettings();
+refreshPersonSelect();
+</script>
+</body>
+</html>
