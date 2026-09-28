@@ -499,6 +499,7 @@ async function send() {
 
   let full = '';
   try {
+    status.textContent = '军师思考中，请稍等…';
     const resp = await fetch('https://ark.cn-beijing.volces.com/api/v3/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
@@ -508,39 +509,18 @@ async function send() {
           { role: 'system', content: buildSystemPrompt() },
           { role: 'user', content: modeHint + '\n\n---\n用户输入：\n' + userText },
         ],
-        stream: true, temperature: 0.7,
+        stream: false, temperature: 0.7,
       }),
     });
     if (!resp.ok) {
       const errText = await resp.text();
-      throw new Error('HTTP ' + resp.status + '：' + errText.slice(0, 200));
+      throw new Error('HTTP ' + resp.status + '：' + errText.slice(0, 300));
     }
-    status.textContent = '军师落笔中…';
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let buffer = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-      for (const line of lines) {
-        const s = line.trim();
-        if (!s || !s.startsWith('data:')) continue;
-        const data = s.slice(5).trim();
-        if (data === '[DONE]') continue;
-        try {
-          const j = JSON.parse(data);
-          const delta = j.choices?.[0]?.delta?.content || '';
-          if (delta) {
-            full += delta;
-            $('output').innerHTML = renderOutput(full);
-            $('outputCard').classList.add('visible');
-          }
-        } catch (e) {}
-      }
-    }
+    const data = await resp.json();
+    full = data.choices?.[0]?.message?.content || '';
+    if (!full) throw new Error('返回为空：' + JSON.stringify(data).slice(0, 300));
+    $('output').innerHTML = renderOutput(full);
+    $('outputCard').classList.add('visible');
     status.classList.remove('visible');
     $('copyWrap').classList.add('visible');
 
