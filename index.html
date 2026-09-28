@@ -133,6 +133,16 @@
 </head>
 <body>
 
+<div id="gate" style="position:fixed;inset:0;z-index:999;background:var(--bg);display:none;align-items:center;justify-content:center;padding:20px;">
+  <div class="card" style="width:100%;max-width:340px;text-align:center;">
+    <h2 style="margin-bottom:6px;">狗头军师</h2>
+    <p style="font-size:13px;color:var(--ink-soft);margin:0 0 16px;">私密工具，请输入密码</p>
+    <input type="password" id="gatePwd" placeholder="访问密码" style="text-align:center;letter-spacing:2px;">
+    <button id="gateBtn" style="width:100%;margin-top:12px;background:var(--accent);color:#fff;border:none;padding:12px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;">进入</button>
+    <div id="gateErr" style="color:var(--danger);font-size:13px;margin-top:10px;display:none;">密码不对</div>
+  </div>
+</div>
+
 <header>
   <h1><span class="dot"></span>狗头军师</h1>
   <button id="settingsBtn">设置</button>
@@ -200,6 +210,29 @@
 <div class="toast" id="toast"></div>
 
 <script>
+/* ===== 密码门 ===== */
+const GATE_HASH = 'Z3RqczIwMjY='; // base64("gtjs2026")
+(function initGate() {
+  const gate = document.getElementById('gate');
+  if (sessionStorage.getItem('gtjs_gate') === 'ok') return;
+  gate.style.display = 'flex';
+  const pwd = document.getElementById('gatePwd');
+  const btn = document.getElementById('gateBtn');
+  const err = document.getElementById('gateErr');
+  function tryEnter() {
+    if (btoa(pwd.value) === GATE_HASH) {
+      sessionStorage.setItem('gtjs_gate', 'ok');
+      gate.style.display = 'none';
+    } else {
+      err.style.display = 'block';
+      pwd.value = '';
+      pwd.focus();
+    }
+  }
+  btn.onclick = tryEnter;
+  pwd.addEventListener('keydown', e => { if (e.key === 'Enter') tryEnter(); });
+})();
+
 const LS = {
   apiKey: 'gtjs_apikey', model: 'gtjs_model', me: 'gtjs_me',
   persons: 'gtjs_persons_v2', chats: 'gtjs_chats_v2', current: 'gtjs_current_person',
